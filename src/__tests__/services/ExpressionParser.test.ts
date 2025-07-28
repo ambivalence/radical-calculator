@@ -55,7 +55,7 @@ describe('ExpressionParser', () => {
 
     test('tokenizes complex expressions', () => {
       const tokens = parser.tokenize('2 * (x + 3) - sqrt(y)');
-      expect(tokens).toHaveLength(11);
+      expect(tokens).toHaveLength(12);
     });
   });
 

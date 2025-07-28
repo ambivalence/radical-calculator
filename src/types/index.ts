@@ -14,9 +14,8 @@ export interface RadicalForm {
   numerator?: RadicalTerm;
   denominator?: RadicalTerm;
   isImaginary: boolean;
-  toString(): string;
+  toString: () => string;
 }
-
 export interface RadicalTerm {
   constant: number;
   radicals: Array<{

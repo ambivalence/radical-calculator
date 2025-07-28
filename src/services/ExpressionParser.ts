@@ -15,6 +15,7 @@ export class ExpressionParser implements IExpressionParser {
     '*': 2,
     '/': 2,
     '^': 3,
+    'u-': 4, // Unary minus has higher precedence
   };
 
   parse(expression: string): ParsedExpression {
@@ -320,7 +321,7 @@ export class ExpressionParser implements IExpressionParser {
           if (token.value === 'u-') {
             // Unary minus
             const operand = stack.pop();
-            if (!operand) throw new Error('Invalid expression');
+            if (!operand) throw new Error('Invalid expression: missing operand for unary minus');
             
             stack.push({
               type: 'operator',
@@ -331,7 +332,7 @@ export class ExpressionParser implements IExpressionParser {
             // Binary operator
             const right = stack.pop();
             const left = stack.pop();
-            if (!left || !right) throw new Error('Invalid expression');
+            if (!left || !right) throw new Error('Invalid expression: missing operands');
             
             stack.push({
               type: 'operator',
@@ -345,7 +346,7 @@ export class ExpressionParser implements IExpressionParser {
         case TokenType.FUNCTION:
           // For now, assume single argument functions
           const arg = stack.pop();
-          if (!arg) throw new Error('Invalid expression');
+          if (!arg) throw new Error('Invalid expression: missing function argument');
           
           stack.push({
             type: 'function',
@@ -357,7 +358,7 @@ export class ExpressionParser implements IExpressionParser {
     }
 
     if (stack.length !== 1) {
-      throw new Error('Invalid expression');
+      throw new Error('Invalid expression: incomplete evaluation');
     }
 
     return stack[0];

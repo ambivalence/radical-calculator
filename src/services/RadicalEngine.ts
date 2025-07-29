@@ -1,4 +1,4 @@
-import { RadicalForm, RadicalTerm } from '@/types'
+import { RadicalForm } from '@/types'
 
 export interface IRadicalEngine {
   simplify(value: number): RadicalForm;

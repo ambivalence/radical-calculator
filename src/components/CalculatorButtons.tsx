@@ -15,7 +15,6 @@ const buttonLayout = [
   ['log(', 'ln(', 'x', 'y']
 ]
 
-const specialButtons = new Set(['C', '⌫', '='])
 const operatorButtons = new Set(['+', '-', '*', '/', '^'])
 const functionButtons = new Set(['sqrt(', 'abs(', 'sin(', 'cos(', 'tan(', 'log(', 'ln('])
 const constantButtons = new Set(['π', 'e'])

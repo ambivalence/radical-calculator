@@ -1,9 +1,15 @@
-import { RadicalForm } from '@/types'
+import { RadicalForm, RadicalExpression, RadicalTerm } from '@/types'
 
 export interface IRadicalEngine {
   simplify(value: number): RadicalForm;
   convertToRadical(decimal: number, precision?: number): RadicalForm;
   radicalToString(radical: RadicalForm): string;
+  
+  // New methods for radical arithmetic
+  createRadicalExpression(terms: RadicalTerm[], constant?: number): RadicalExpression;
+  addRadicalExpressions(expr1: RadicalExpression, expr2: RadicalExpression): RadicalExpression;
+  multiplyRadicalExpressions(expr1: RadicalExpression, expr2: RadicalExpression): RadicalExpression;
+  radicalExpressionToString(expr: RadicalExpression): string;
 }
 
 export class RadicalEngine implements IRadicalEngine {
@@ -105,6 +111,140 @@ export class RadicalEngine implements IRadicalEngine {
     }
 
     return `${radical.coefficient}√${radical.radicand}`;
+  }
+
+  /**
+   * Create a radical expression from terms and constant
+   */
+  createRadicalExpression(terms: RadicalTerm[], constant: number = 0): RadicalExpression {
+    // Combine like terms
+    const combinedTerms = this.combineLikeTerms(terms);
+    
+    return {
+      terms: combinedTerms,
+      constant,
+      toString: () => this.radicalExpressionToString({ terms: combinedTerms, constant, toString: () => '' })
+    };
+  }
+
+  /**
+   * Add two radical expressions
+   */
+  addRadicalExpressions(expr1: RadicalExpression, expr2: RadicalExpression): RadicalExpression {
+    const allTerms = [...expr1.terms, ...expr2.terms];
+    const newConstant = expr1.constant + expr2.constant;
+    
+    return this.createRadicalExpression(allTerms, newConstant);
+  }
+
+  /**
+   * Multiply two radical expressions
+   */
+  multiplyRadicalExpressions(expr1: RadicalExpression, expr2: RadicalExpression): RadicalExpression {
+    const newTerms: RadicalTerm[] = [];
+    let newConstant = expr1.constant * expr2.constant;
+
+    // Multiply each term in expr1 with each term in expr2
+    for (const term1 of expr1.terms) {
+      for (const term2 of expr2.terms) {
+        const newCoeff = term1.coefficient * term2.coefficient;
+        const newRadicand = term1.radicand * term2.radicand;
+        
+        // Simplify the result
+        const simplified = this.simplify(newRadicand);
+        newTerms.push({
+          coefficient: newCoeff * simplified.coefficient,
+          radicand: simplified.radicand
+        });
+      }
+    }
+
+    // Handle constant * terms
+    for (const term1 of expr1.terms) {
+      if (expr2.constant !== 0) {
+        newTerms.push({
+          coefficient: term1.coefficient * expr2.constant,
+          radicand: term1.radicand
+        });
+      }
+    }
+
+    for (const term2 of expr2.terms) {
+      if (expr1.constant !== 0) {
+        newTerms.push({
+          coefficient: term2.coefficient * expr1.constant,
+          radicand: term2.radicand
+        });
+      }
+    }
+
+    return this.createRadicalExpression(newTerms, newConstant);
+  }
+
+  /**
+   * Convert radical expression to string
+   */
+  radicalExpressionToString(expr: RadicalExpression): string {
+    const parts: string[] = [];
+
+    // Add constant if non-zero
+    if (expr.constant !== 0) {
+      parts.push(expr.constant.toString());
+    }
+
+    // Add radical terms
+    for (const term of expr.terms) {
+      if (term.coefficient === 0) continue;
+
+      let termStr = '';
+      
+      if (term.radicand === 1) {
+        // Just a coefficient
+        termStr = term.coefficient.toString();
+      } else {
+        // Radical term
+        if (term.coefficient === 1) {
+          termStr = `√${term.radicand}`;
+        } else if (term.coefficient === -1) {
+          termStr = `-√${term.radicand}`;
+        } else {
+          termStr = `${term.coefficient}√${term.radicand}`;
+        }
+      }
+
+      if (parts.length === 0) {
+        parts.push(termStr);
+      } else {
+        if (termStr.startsWith('-')) {
+          parts.push(` - ${termStr.substring(1)}`);
+        } else {
+          parts.push(` + ${termStr}`);
+        }
+      }
+    }
+
+    return parts.length > 0 ? parts.join('') : '0';
+  }
+
+  /**
+   * Combine like terms in radical expression
+   */
+  private combineLikeTerms(terms: RadicalTerm[]): RadicalTerm[] {
+    const termMap = new Map<number, number>();
+
+    for (const term of terms) {
+      const existing = termMap.get(term.radicand) || 0;
+      termMap.set(term.radicand, existing + term.coefficient);
+    }
+
+    const result: RadicalTerm[] = [];
+    for (const [radicand, coefficient] of termMap) {
+      if (coefficient !== 0) {
+        result.push({ coefficient, radicand });
+      }
+    }
+
+    return result;
   }
 
   /**

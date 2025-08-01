@@ -2,7 +2,7 @@ import { create, all, MathJsStatic } from 'mathjs'
 import { IExpressionParser } from './ExpressionParser'
 import { IVariableManager } from './VariableManager'
 import { IRadicalEngine } from './RadicalEngine'
-import { EvaluationResult, ASTNode, RadicalForm } from '@/types'
+import { EvaluationResult, ASTNode, RadicalExpression } from '@/types'
 
 export interface ICalculationEngine {
   evaluate(expression: string): EvaluationResult;
@@ -46,16 +46,8 @@ export class CalculationEngine implements ICalculationEngine {
         };
       }
 
-      // Evaluate the AST
-      const result = this.evaluateAST(parsed.ast, variables);
-      
-      // Try to convert to radical form
-      let radicalForm: RadicalForm | undefined;
-      try {
-        radicalForm = this.radicalEngine.convertToRadical(result);
-      } catch {
-        // If conversion fails, that's okay
-      }
+      // Evaluate the AST and get both decimal and radical forms
+      const { result, radicalForm } = this.evaluateASTWithRadical(parsed.ast, variables);
 
       return {
         success: true,
@@ -68,6 +60,37 @@ export class CalculationEngine implements ICalculationEngine {
         success: false,
         error: error instanceof Error ? error.message : 'Calculation error'
       };
+    }
+  }
+
+  private evaluateASTWithRadical(node: ASTNode, variables: Map<string, number>): { result: number; radicalForm?: RadicalExpression } {
+    switch (node.type) {
+      case 'number':
+        const num = node.value as number;
+        // Convert number to radical expression if it's not an integer
+        if (num !== Math.floor(num)) {
+          return { result: num };
+        }
+        return { 
+          result: num,
+          radicalForm: this.radicalEngine.createRadicalExpression([], num)
+        };
+
+      case 'variable':
+        const value = variables.get(node.value as string);
+        if (value === undefined) {
+          throw new Error(`Undefined variable: ${node.value}`);
+        }
+        return { result: value };
+
+      case 'operator':
+        return this.evaluateOperatorWithRadical(node, variables);
+
+      case 'function':
+        return this.evaluateFunctionWithRadical(node, variables);
+
+      default:
+        throw new Error(`Unknown node type: ${node.type}`);
     }
   }
 
@@ -91,6 +114,186 @@ export class CalculationEngine implements ICalculationEngine {
 
       default:
         throw new Error(`Unknown node type: ${node.type}`);
+    }
+  }
+
+  private evaluateOperatorWithRadical(node: ASTNode, variables: Map<string, number>): { result: number; radicalForm?: RadicalExpression } {
+    const operator = node.value as string;
+
+    if (operator === 'u-') {
+      // Unary minus
+      if (!node.right) throw new Error('Invalid unary minus');
+      const right = this.evaluateASTWithRadical(node.right, variables);
+      
+      let negatedRadicalForm: RadicalExpression | undefined;
+      if (right.radicalForm) {
+        // Negate all terms and constant
+        const negatedTerms = right.radicalForm.terms.map(term => ({
+          ...term,
+          coefficient: -term.coefficient
+        }));
+        negatedRadicalForm = this.radicalEngine.createRadicalExpression(negatedTerms, -right.radicalForm.constant);
+      }
+      
+      return { 
+        result: -right.result,
+        radicalForm: negatedRadicalForm
+      };
+    }
+
+    // Binary operators
+    if (!node.left || !node.right) {
+      throw new Error(`Invalid binary operator: ${operator}`);
+    }
+
+    const left = this.evaluateASTWithRadical(node.left, variables);
+    const right = this.evaluateASTWithRadical(node.right, variables);
+
+    let result: number;
+    let radicalForm: RadicalExpression | undefined;
+
+    switch (operator) {
+      case '+':
+        result = left.result + right.result;
+        if (left.radicalForm && right.radicalForm) {
+          radicalForm = this.radicalEngine.addRadicalExpressions(left.radicalForm, right.radicalForm);
+        } else if (left.radicalForm) {
+          // Add right as constant to left radical form
+          radicalForm = this.radicalEngine.createRadicalExpression(
+            left.radicalForm.terms, 
+            left.radicalForm.constant + right.result
+          );
+        } else if (right.radicalForm) {
+          // Add left as constant to right radical form
+          radicalForm = this.radicalEngine.createRadicalExpression(
+            right.radicalForm.terms, 
+            right.radicalForm.constant + left.result
+          );
+        }
+        break;
+      case '-':
+        result = left.result - right.result;
+        if (left.radicalForm && right.radicalForm) {
+          // Negate right terms and add
+          const negatedRightTerms = right.radicalForm.terms.map(term => ({
+            ...term,
+            coefficient: -term.coefficient
+          }));
+          const negatedRight = this.radicalEngine.createRadicalExpression(
+            negatedRightTerms, 
+            -right.radicalForm.constant
+          );
+          radicalForm = this.radicalEngine.addRadicalExpressions(left.radicalForm, negatedRight);
+        } else if (left.radicalForm) {
+          radicalForm = this.radicalEngine.createRadicalExpression(
+            left.radicalForm.terms, 
+            left.radicalForm.constant - right.result
+          );
+        } else if (right.radicalForm) {
+          const negatedTerms = right.radicalForm.terms.map(term => ({
+            ...term,
+            coefficient: -term.coefficient
+          }));
+          radicalForm = this.radicalEngine.createRadicalExpression(
+            negatedTerms, 
+            left.result - right.radicalForm.constant
+          );
+        }
+        break;
+      case '*':
+        result = left.result * right.result;
+        if (left.radicalForm && right.radicalForm) {
+          radicalForm = this.radicalEngine.multiplyRadicalExpressions(left.radicalForm, right.radicalForm);
+        } else if (left.radicalForm) {
+          // Multiply left radical by right constant
+          const scaledTerms = left.radicalForm.terms.map(term => ({
+            ...term,
+            coefficient: term.coefficient * right.result
+          }));
+          radicalForm = this.radicalEngine.createRadicalExpression(
+            scaledTerms, 
+            left.radicalForm.constant * right.result
+          );
+        } else if (right.radicalForm) {
+          // Multiply right radical by left constant
+          const scaledTerms = right.radicalForm.terms.map(term => ({
+            ...term,
+            coefficient: term.coefficient * left.result
+          }));
+          radicalForm = this.radicalEngine.createRadicalExpression(
+            scaledTerms, 
+            right.radicalForm.constant * left.result
+          );
+        }
+        break;
+      case '/':
+        if (right.result === 0) throw new Error('Division by zero');
+        result = left.result / right.result;
+        // For now, division doesn't preserve radical form unless it's simple
+        if (left.radicalForm && !right.radicalForm && right.result !== 0) {
+          const scaledTerms = left.radicalForm.terms.map(term => ({
+            ...term,
+            coefficient: term.coefficient / right.result
+          }));
+          radicalForm = this.radicalEngine.createRadicalExpression(
+            scaledTerms, 
+            left.radicalForm.constant / right.result
+          );
+        }
+        break;
+      case '^':
+        result = Math.pow(left.result, right.result);
+        // Power operations are complex for radicals, skip for now
+        break;
+      default:
+        throw new Error(`Unknown operator: ${operator}`);
+    }
+
+    return { result, radicalForm };
+  }
+
+  private evaluateFunctionWithRadical(node: ASTNode, variables: Map<string, number>): { result: number; radicalForm?: RadicalExpression } {
+    const func = node.value as string;
+    const args = node.args || [];
+
+    if (args.length === 0) {
+      throw new Error(`Function ${func} requires arguments`);
+    }
+
+    const arg = this.evaluateAST(args[0], variables);
+
+    switch (func) {
+      case 'sqrt':
+        if (arg < 0) throw new Error('Square root of negative number');
+        const result = Math.sqrt(arg);
+        
+        // Create radical expression from simplified radical form
+        const radicalForm = this.radicalEngine.simplify(arg);
+        const radicalExpression = this.radicalEngine.createRadicalExpression([{
+          coefficient: radicalForm.coefficient,
+          radicand: radicalForm.radicand
+        }]);
+        
+        return { 
+          result,
+          radicalForm: radicalExpression
+        };
+      case 'abs':
+        return { result: Math.abs(arg) };
+      case 'sin':
+        return { result: Math.sin(arg) };
+      case 'cos':
+        return { result: Math.cos(arg) };
+      case 'tan':
+        return { result: Math.tan(arg) };
+      case 'log':
+        if (arg <= 0) throw new Error('Logarithm of non-positive number');
+        return { result: Math.log10(arg) };
+      case 'ln':
+        if (arg <= 0) throw new Error('Natural logarithm of non-positive number');
+        return { result: Math.log(arg) };
+      default:
+        throw new Error(`Unknown function: ${func}`);
     }
   }
 

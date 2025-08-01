@@ -4,8 +4,20 @@ export interface CalculationResult {
   expression: string;
   variables: Map<string, number>;
   decimalResult: number;
-  radicalResult: RadicalForm | null;
+  radicalResult: RadicalExpression | null;
   timestamp: Date;
+}
+
+export interface RadicalExpression {
+  terms: RadicalTerm[];
+  constant: number;
+  toString: () => string;
+}
+
+export interface RadicalTerm {
+  coefficient: number;
+  radicand: number;
+  isImaginary?: boolean;
 }
 
 export interface RadicalForm {
@@ -15,13 +27,6 @@ export interface RadicalForm {
   denominator?: RadicalTerm;
   isImaginary: boolean;
   toString: () => string;
-}
-export interface RadicalTerm {
-  constant: number;
-  radicals: Array<{
-    coefficient: number;
-    radicand: number;
-  }>;
 }
 
 export interface ParsedExpression {
@@ -71,7 +76,7 @@ export interface EvaluationResult {
   success: boolean;
   value?: number;
   decimalForm?: number;
-  radicalForm?: RadicalForm;
+  radicalForm?: RadicalExpression;
   error?: string;
 }
 

@@ -243,7 +243,10 @@ export class CalculationEngine implements ICalculationEngine {
         break;
       case '^':
         result = Math.pow(left.result, right.result);
-        // Power operations are complex for radicals, skip for now
+        // Handle power operations with radicals
+        if (left.radicalForm && Number.isInteger(right.result) && right.result >= 0) {
+          radicalForm = this.radicalEngine.powerRadicalExpression(left.radicalForm, right.result);
+        }
         break;
       default:
         throw new Error(`Unknown operator: ${operator}`);

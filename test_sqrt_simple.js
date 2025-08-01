@@ -1,8 +1,8 @@
 import { chromium } from 'playwright';
 import { spawn } from 'child_process';
 
-async function testRadicalArithmetic() {
-  console.log('🧪 Testing Radical Arithmetic with Headless Browser');
+async function testPowerOperations() {
+  console.log('🧪 Testing Power Operations with Radicals');
   
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
@@ -28,20 +28,36 @@ async function testRadicalArithmetic() {
     await page.waitForSelector('input[type="text"]', { timeout: 10000 });
     console.log('✅ Calculator loaded successfully');
 
-    // Test radical arithmetic cases
-    console.log('\n🧮 Testing radical arithmetic...');
+    // Test power operations with radicals
+    console.log('\n🧮 Testing power operations...');
     
     const testCases = [
-      { input: 'sqrt(3) + sqrt(3)', expected: '2√3' },
-      { input: 'sqrt(2) + sqrt(2)', expected: '2√2' },
-      { input: 'sqrt(5) + sqrt(5) + sqrt(5)', expected: '3√5' },
-      { input: '2*sqrt(3) + sqrt(3)', expected: '3√3' },
-      { input: 'sqrt(8) + sqrt(2)', expected: '3√2' },
-      { input: 'sqrt(12) + sqrt(3)', expected: '3√3' }
+      { 
+        input: '(sqrt(3) + sqrt(2))^2', 
+        expected: '5 + 2√6',
+        explanation: '(√3 + √2)² = (√3)² + 2(√3)(√2) + (√2)² = 3 + 2√6 + 2 = 5 + 2√6'
+      },
+      { 
+        input: 'sqrt(3)^2', 
+        expected: '3',
+        explanation: '(√3)² = 3'
+      },
+      { 
+        input: '(sqrt(2))^2', 
+        expected: '2',
+        explanation: '(√2)² = 2'
+      },
+      { 
+        input: '(2*sqrt(3))^2', 
+        expected: '12',
+        explanation: '(2√3)² = 4 × 3 = 12'
+      }
     ];
     
     for (const testCase of testCases) {
       console.log(`\n📝 Testing: ${testCase.input}`);
+      console.log(`📖 Expected: ${testCase.expected}`);
+      console.log(`💡 Math: ${testCase.explanation}`);
       
       await page.fill('input[type="text"]', '');
       await page.fill('input[type="text"]', testCase.input);
@@ -61,7 +77,7 @@ async function testRadicalArithmetic() {
         await toggleButton.click();
         await page.waitForTimeout(500);
         const radicalResult = await resultElement.textContent();
-        console.log(`📊 Radical result: "${radicalResult}" (expected: ${testCase.expected})`);
+        console.log(`📊 Radical result: "${radicalResult}"`);
         
         // Toggle back for next test
         await toggleButton.click();
@@ -84,4 +100,4 @@ async function testRadicalArithmetic() {
 }
 
 // Run the test
-testRadicalArithmetic().catch(console.error);
+testPowerOperations().catch(console.error);

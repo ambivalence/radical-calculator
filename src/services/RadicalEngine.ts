@@ -9,6 +9,8 @@ export interface IRadicalEngine {
   createRadicalExpression(terms: RadicalTerm[], constant?: number): RadicalExpression;
   addRadicalExpressions(expr1: RadicalExpression, expr2: RadicalExpression): RadicalExpression;
   multiplyRadicalExpressions(expr1: RadicalExpression, expr2: RadicalExpression): RadicalExpression;
+  powerRadicalExpression(expr: RadicalExpression, power: number): RadicalExpression;
+  evaluateRadicalExpression(expr: RadicalExpression): number;
   radicalExpressionToString(expr: RadicalExpression): string;
 }
 
@@ -152,10 +154,15 @@ export class RadicalEngine implements IRadicalEngine {
         
         // Simplify the result
         const simplified = this.simplify(newRadicand);
-        newTerms.push({
-          coefficient: newCoeff * simplified.coefficient,
-          radicand: simplified.radicand
-        });
+        if (simplified.radicand === 1) {
+          // This becomes a constant
+          newConstant += newCoeff * simplified.coefficient;
+        } else {
+          newTerms.push({
+            coefficient: newCoeff * simplified.coefficient,
+            radicand: simplified.radicand
+          });
+        }
       }
     }
 
@@ -179,6 +186,49 @@ export class RadicalEngine implements IRadicalEngine {
     }
 
     return this.createRadicalExpression(newTerms, newConstant);
+  }
+
+  /**
+   * Raise a radical expression to a power
+   */
+  powerRadicalExpression(expr: RadicalExpression, power: number): RadicalExpression {
+    if (power === 0) {
+      return this.createRadicalExpression([], 1);
+    }
+    
+    if (power === 1) {
+      return expr;
+    }
+    
+    if (power === 2) {
+      // Special case for squaring: (a + b)² = a² + 2ab + b²
+      return this.multiplyRadicalExpressions(expr, expr);
+    }
+    
+    if (Number.isInteger(power) && power > 2) {
+      // For higher integer powers, use repeated multiplication
+      let result = expr;
+      for (let i = 1; i < power; i++) {
+        result = this.multiplyRadicalExpressions(result, expr);
+      }
+      return result;
+    }
+    
+    // For non-integer powers or complex cases, we can't maintain exact radical form
+    return this.createRadicalExpression([], Math.pow(this.evaluateRadicalExpression(expr), power));
+  }
+
+  /**
+   * Evaluate a radical expression to its decimal value
+   */
+  evaluateRadicalExpression(expr: RadicalExpression): number {
+    let result = expr.constant;
+    
+    for (const term of expr.terms) {
+      result += term.coefficient * Math.sqrt(term.radicand);
+    }
+    
+    return result;
   }
 
   /**

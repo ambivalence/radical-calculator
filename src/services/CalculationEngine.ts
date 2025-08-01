@@ -27,8 +27,11 @@ export class CalculationEngine implements ICalculationEngine {
 
   evaluateWithVariables(expression: string, variables: Map<string, number>): EvaluationResult {
     try {
-      // Parse the expression
-      const parsed = this.parser.parse(expression);
+      // Preprocess expression to handle "ans" shortcuts (e.g., "+5" becomes "ans+5")
+      const processedExpression = this.variableManager.preprocessExpression(expression);
+      
+      // Parse the processed expression
+      const parsed = this.parser.parse(processedExpression);
       
       if (!parsed.isValid || !parsed.ast) {
         return {
@@ -48,6 +51,9 @@ export class CalculationEngine implements ICalculationEngine {
 
       // Evaluate the AST and get both decimal and radical forms
       const { result, radicalForm } = this.evaluateASTWithRadical(parsed.ast, variables);
+
+      // Update the last answer in variable manager
+      this.variableManager.setLastAnswer(result, radicalForm);
 
       return {
         success: true,
@@ -81,6 +87,15 @@ export class CalculationEngine implements ICalculationEngine {
         if (value === undefined) {
           throw new Error(`Undefined variable: ${node.value}`);
         }
+        
+        // Special handling for 'ans' to preserve radical form
+        if (node.value === 'ans') {
+          const ansRadicalForm = this.variableManager.getLastAnswerRadicalForm();
+          if (ansRadicalForm) {
+            return { result: value, radicalForm: ansRadicalForm };
+          }
+        }
+        
         return { result: value };
 
       case 'operator':

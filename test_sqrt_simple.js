@@ -1,8 +1,8 @@
 import { chromium } from 'playwright';
 import { spawn } from 'child_process';
 
-async function testPowerOperations() {
-  console.log('🧪 Testing Power Operations with Radicals');
+async function testAnsFeature() {
+  console.log('🧪 Testing "ans" Feature with Headless Browser');
   
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
@@ -28,36 +28,51 @@ async function testPowerOperations() {
     await page.waitForSelector('input[type="text"]', { timeout: 10000 });
     console.log('✅ Calculator loaded successfully');
 
-    // Test power operations with radicals
-    console.log('\n🧮 Testing power operations...');
+    // Test "ans" functionality
+    console.log('\n🧮 Testing "ans" functionality...');
     
-    const testCases = [
+    const testSequence = [
       { 
-        input: '(sqrt(3) + sqrt(2))^2', 
-        expected: '5 + 2√6',
-        explanation: '(√3 + √2)² = (√3)² + 2(√3)(√2) + (√2)² = 3 + 2√6 + 2 = 5 + 2√6'
+        input: 'sqrt(3) + sqrt(2)', 
+        description: 'First calculation to establish ans',
+        expectToggle: true
       },
       { 
-        input: 'sqrt(3)^2', 
-        expected: '3',
-        explanation: '(√3)² = 3'
+        input: 'ans', 
+        description: 'Using ans directly',
+        expectToggle: true
       },
       { 
-        input: '(sqrt(2))^2', 
-        expected: '2',
-        explanation: '(√2)² = 2'
+        input: 'ans^2', 
+        description: 'Using ans in expression',
+        expectToggle: true
       },
       { 
-        input: '(2*sqrt(3))^2', 
-        expected: '12',
-        explanation: '(2√3)² = 4 × 3 = 12'
+        input: '+5', 
+        description: 'Auto-prepend ans for operator-first input',
+        expectToggle: false
+      },
+      { 
+        input: '*2', 
+        description: 'Auto-prepend ans for multiplication',
+        expectToggle: false
+      },
+      { 
+        input: '/3', 
+        description: 'Auto-prepend ans for division',
+        expectToggle: false
+      },
+      { 
+        input: '^2', 
+        description: 'Auto-prepend ans for power',
+        expectToggle: false
       }
     ];
     
-    for (const testCase of testCases) {
-      console.log(`\n📝 Testing: ${testCase.input}`);
-      console.log(`📖 Expected: ${testCase.expected}`);
-      console.log(`💡 Math: ${testCase.explanation}`);
+    for (let i = 0; i < testSequence.length; i++) {
+      const testCase = testSequence[i];
+      console.log(`\n📝 Step ${i + 1}: ${testCase.description}`);
+      console.log(`📋 Input: "${testCase.input}"`);
       
       await page.fill('input[type="text"]', '');
       await page.fill('input[type="text"]', testCase.input);
@@ -83,8 +98,31 @@ async function testPowerOperations() {
         await toggleButton.click();
         await page.waitForTimeout(500);
       } else {
-        console.log(`❌ No toggle button - only decimal result available`);
+        console.log(`📊 No radical form available`);
       }
+    }
+    
+    // Test edge cases
+    console.log('\n🔍 Testing edge cases...');
+    
+    const edgeCases = [
+      { input: '-5', description: 'Unary minus (should NOT prepend ans)' },
+      { input: '(-5)', description: 'Parenthesized negative (should NOT prepend ans)' },
+      { input: 'sqrt(ans)', description: 'ans inside function' },
+    ];
+    
+    for (const testCase of edgeCases) {
+      console.log(`\n📝 Edge case: ${testCase.description}`);
+      console.log(`📋 Input: "${testCase.input}"`);
+      
+      await page.fill('input[type="text"]', '');
+      await page.fill('input[type="text"]', testCase.input);
+      await page.press('input[type="text"]', 'Enter');
+      await page.waitForTimeout(1000);
+      
+      const resultElement = await page.locator('[class*="text-3xl"]').first();
+      const decimalResult = await resultElement.textContent();
+      console.log(`📊 Result: "${decimalResult}"`);
     }
     
     // Clean up
@@ -100,4 +138,4 @@ async function testPowerOperations() {
 }
 
 // Run the test
-testPowerOperations().catch(console.error);
+testAnsFeature().catch(console.error);

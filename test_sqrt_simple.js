@@ -1,8 +1,8 @@
 import { chromium } from 'playwright';
 import { spawn } from 'child_process';
 
-async function testAnsFeature() {
-  console.log('🧪 Testing "ans" Feature with Headless Browser');
+async function testCalculatorImprovements() {
+  console.log('🧪 Testing Calculator UI Improvements');
   
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
@@ -28,107 +28,107 @@ async function testAnsFeature() {
     await page.waitForSelector('input[type="text"]', { timeout: 10000 });
     console.log('✅ Calculator loaded successfully');
 
-    // Test "ans" functionality
-    console.log('\n🧮 Testing "ans" functionality...');
+    // Test 1: Check if "ans" button exists
+    console.log('\n🔍 Test 1: Checking for "ans" button...');
+    const ansButton = await page.locator('button:has-text("ans")').first();
+    const hasAnsButton = await ansButton.count() > 0;
+    console.log(`📊 "ans" button found: ${hasAnsButton ? '✅ YES' : '❌ NO'}`);
+
+    // Test 2: Input clearing after equals
+    console.log('\n🔍 Test 2: Testing input clearing after equals...');
     
-    const testSequence = [
-      { 
-        input: 'sqrt(3) + sqrt(2)', 
-        description: 'First calculation to establish ans',
-        expectToggle: true
-      },
-      { 
-        input: 'ans', 
-        description: 'Using ans directly',
-        expectToggle: true
-      },
-      { 
-        input: 'ans^2', 
-        description: 'Using ans in expression',
-        expectToggle: true
-      },
-      { 
-        input: '+5', 
-        description: 'Auto-prepend ans for operator-first input',
-        expectToggle: false
-      },
-      { 
-        input: '*2', 
-        description: 'Auto-prepend ans for multiplication',
-        expectToggle: false
-      },
-      { 
-        input: '/3', 
-        description: 'Auto-prepend ans for division',
-        expectToggle: false
-      },
-      { 
-        input: '^2', 
-        description: 'Auto-prepend ans for power',
-        expectToggle: false
-      }
+    // Enter a calculation
+    await page.fill('input[type="text"]', 'sqrt(3) + sqrt(2)');
+    console.log('📝 Entered: sqrt(3) + sqrt(2)');
+    
+    // Press equals
+    await page.press('input[type="text"]', 'Enter');
+    await page.waitForTimeout(1000);
+    
+    // Check if input is cleared
+    const inputValue = await page.inputValue('input[type="text"]');
+    console.log(`📊 Input after equals: "${inputValue}" ${inputValue === '' ? '✅ CLEARED' : '❌ NOT CLEARED'}`);
+
+    // Test 3: "ans" button functionality
+    console.log('\n🔍 Test 3: Testing "ans" button click...');
+    if (hasAnsButton) {
+      await ansButton.click();
+      await page.waitForTimeout(500);
+      
+      const inputAfterAns = await page.inputValue('input[type="text"]');
+      console.log(`📊 Input after "ans" button: "${inputAfterAns}" ${inputAfterAns === 'ans' ? '✅ CORRECT' : '❌ INCORRECT'}`);
+      
+      // Clear input for next test
+      await page.fill('input[type="text"]', '');
+    }
+
+    // Test 4: Auto-prefix with operator buttons
+    console.log('\n🔍 Test 4: Testing auto-prefix with operator buttons...');
+    
+    const operatorTests = [
+      { button: '+', expected: 'ans+' },
+      { button: '*', expected: 'ans*' },
+      { button: '/', expected: 'ans/' },
+      { button: '^', expected: 'ans^' }
     ];
     
-    for (let i = 0; i < testSequence.length; i++) {
-      const testCase = testSequence[i];
-      console.log(`\n📝 Step ${i + 1}: ${testCase.description}`);
-      console.log(`📋 Input: "${testCase.input}"`);
-      
+    for (const test of operatorTests) {
+      // Clear input
       await page.fill('input[type="text"]', '');
-      await page.fill('input[type="text"]', testCase.input);
-      await page.press('input[type="text"]', 'Enter');
-      await page.waitForTimeout(1000);
       
-      // Get decimal result
-      const resultElement = await page.locator('[class*="text-3xl"]').first();
-      const decimalResult = await resultElement.textContent();
-      console.log(`📊 Decimal result: "${decimalResult}"`);
+      // Click operator button
+      const operatorButton = await page.locator(`button:has-text("${test.button}")`).first();
+      await operatorButton.click();
+      await page.waitForTimeout(500);
       
-      // Check if there's a toggle button and try radical mode
-      const toggleButton = await page.locator('button[title*="Toggle"]').first();
-      const hasToggle = await toggleButton.count() > 0;
-      
-      if (hasToggle) {
-        await toggleButton.click();
-        await page.waitForTimeout(500);
-        const radicalResult = await resultElement.textContent();
-        console.log(`📊 Radical result: "${radicalResult}"`);
-        
-        // Toggle back for next test
-        await toggleButton.click();
-        await page.waitForTimeout(500);
-      } else {
-        console.log(`📊 No radical form available`);
-      }
+      const result = await page.inputValue('input[type="text"]');
+      console.log(`📊 "${test.button}" button: "${result}" ${result === test.expected ? '✅ CORRECT' : '❌ INCORRECT'}`);
     }
+
+    // Test 5: Typing operators into empty input
+    console.log('\n🔍 Test 5: Testing typing operators into empty input...');
     
-    // Test edge cases
-    console.log('\n🔍 Testing edge cases...');
+    // Clear input
+    await page.fill('input[type="text"]', '');
     
-    const edgeCases = [
-      { input: '-5', description: 'Unary minus (should NOT prepend ans)' },
-      { input: '(-5)', description: 'Parenthesized negative (should NOT prepend ans)' },
-      { input: 'sqrt(ans)', description: 'ans inside function' },
-    ];
+    // Type a plus sign
+    await page.type('input[type="text"]', '+');
+    await page.waitForTimeout(500);
     
-    for (const testCase of edgeCases) {
-      console.log(`\n📝 Edge case: ${testCase.description}`);
-      console.log(`📋 Input: "${testCase.input}"`);
-      
-      await page.fill('input[type="text"]', '');
-      await page.fill('input[type="text"]', testCase.input);
-      await page.press('input[type="text"]', 'Enter');
-      await page.waitForTimeout(1000);
-      
-      const resultElement = await page.locator('[class*="text-3xl"]').first();
-      const decimalResult = await resultElement.textContent();
-      console.log(`📊 Result: "${decimalResult}"`);
-    }
+    const typedResult = await page.inputValue('input[type="text"]');
+    console.log(`📊 Typed "+": "${typedResult}" ${typedResult === 'ans+' ? '✅ AUTO-PREFIXED' : '❌ NOT PREFIXED'}`);
+
+    // Test 6: Full workflow test
+    console.log('\n🔍 Test 6: Testing full workflow...');
     
+    // Clear and start fresh
+    await page.fill('input[type="text"]', '');
+    await page.fill('input[type="text"]', '5');
+    await page.press('input[type="text"]', 'Enter');
+    await page.waitForTimeout(1000);
+    
+    console.log('📝 Step 1: Calculated 5');
+    
+    // Click + button (should auto-prefix with ans)
+    const plusButton = await page.locator('button:has-text("+")').first();
+    await plusButton.click();
+    await page.waitForTimeout(500);
+    
+    const afterPlus = await page.inputValue('input[type="text"]');
+    console.log(`📊 After + button: "${afterPlus}"`);
+    
+    // Add 3
+    await page.type('input[type="text"]', '3');
+    await page.press('input[type="text"]', 'Enter');
+    await page.waitForTimeout(1000);
+    
+    const finalResult = await page.locator('[class*="text-3xl"]').first().textContent();
+    console.log(`📊 Final result: "${finalResult}" ${finalResult === '8' ? '✅ CORRECT (5+3=8)' : '❌ INCORRECT'}`);
+
     // Clean up
     devServer.kill('SIGTERM');
     
-    console.log('\n✅ Test completed!');
+    console.log('\n✅ All tests completed!');
     
   } catch (error) {
     console.error('❌ Test failed:', error);
@@ -138,4 +138,4 @@ async function testAnsFeature() {
 }
 
 // Run the test
-testAnsFeature().catch(console.error);
+testCalculatorImprovements().catch(console.error);

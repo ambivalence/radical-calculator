@@ -46,6 +46,9 @@ export const Calculator: React.FC = () => {
       
       setResult(calcResult)
       setHistory(prev => [calcResult, ...prev.slice(0, 49)]) // Keep last 50 items
+      
+      // Clear the input after successful calculation
+      setExpression('')
     } else {
       setError(evaluationResult.error || 'Calculation error')
     }
@@ -65,9 +68,35 @@ export const Calculator: React.FC = () => {
         setExpression(prev => prev.slice(0, -1))
         break
       default:
-        setExpression(prev => prev + value)
+        // Check if we're adding an operator to an empty input
+        if (!expression.trim() && ['+', '-', '*', '/', '^'].includes(value)) {
+          // Only auto-prefix if we have a last answer and it's not unary minus
+          if (services.variableManager.getLastAnswer() !== undefined && value !== '-') {
+            setExpression(`ans${value}`)
+          } else {
+            setExpression(value)
+          }
+        } else {
+          setExpression(prev => prev + value)
+        }
     }
-  }, [handleCalculate])
+  }, [handleCalculate, expression, services])
+
+  const handleInputChange = useCallback((newValue: string) => {
+    // Check if the user is typing an operator into an empty input
+    const trimmedValue = newValue.trim()
+    const prevTrimmed = expression.trim()
+    
+    if (!prevTrimmed && trimmedValue && ['+', '*', '/', '^'].includes(trimmedValue[0])) {
+      // Auto-prefix with ans if we have a last answer
+      if (services.variableManager.getLastAnswer() !== undefined) {
+        setExpression(`ans${trimmedValue}`)
+        return
+      }
+    }
+    
+    setExpression(newValue)
+  }, [expression, services])
 
   const handleKeyPress = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -145,7 +174,7 @@ export const Calculator: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <ExpressionInput
                 value={expression}
-                onChange={setExpression}
+                onChange={handleInputChange}
                 onSubmit={handleCalculate}
                 error={error}
               />

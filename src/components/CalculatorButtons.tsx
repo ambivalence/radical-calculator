@@ -12,12 +12,12 @@ const buttonLayout = [
   ['0', '.', '=', '+'],
   ['sqrt(', 'abs(', '^', 'π'],
   ['sin(', 'cos(', 'tan(', 'e'],
-  ['log(', 'ln(', 'x', 'y']
+  ['log(', 'ln(', 'ans', 'x']
 ]
 
 const operatorButtons = new Set(['+', '-', '*', '/', '^'])
 const functionButtons = new Set(['sqrt(', 'abs(', 'sin(', 'cos(', 'tan(', 'log(', 'ln('])
-const constantButtons = new Set(['π', 'e'])
+const constantButtons = new Set(['π', 'e', 'ans'])
 
 export const CalculatorButtons: React.FC<CalculatorButtonsProps> = ({ onButtonClick }) => {
   const getButtonClass = (button: string): string => {

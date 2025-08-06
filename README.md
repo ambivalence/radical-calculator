@@ -1,6 +1,12 @@
-# High School Calculator
+# Radical Calculator
 
 A web-based calculator application specifically designed for high school students with advanced radical handling capabilities.
+
+## 🌐 Live Repository
+
+**GitHub Repository**: https://github.com/ambivalence/radical-calculator
+
+This project is publicly available and ready for deployment or contribution!
 
 ## 🎯 Project Status
 
@@ -39,11 +45,18 @@ A web-based calculator application specifically designed for high school student
 - ✅ TypeScript compilation: **PASSING**
 - ✅ Vite build process: **PASSING** 
 - ✅ Production build: **WORKING** (786KB bundle)
+- ✅ GitHub deployment: **LIVE** at https://github.com/ambivalence/radical-calculator
 
 #### **Development Server**
 - ✅ Development server: **RUNNING** on http://localhost:5173
 - ✅ Hot reload: **WORKING**
 - ✅ Basic UI rendering: **CONFIRMED**
+
+#### **Recent Bug Fixes (Latest Commit)**
+- ✅ **Fraction handling improvements**: Better precision for decimal-to-fraction conversion
+- ✅ **Square root calculations**: Enhanced radical simplification accuracy
+- ✅ **Expression parsing**: Improved handling of complex mathematical expressions
+- ✅ **Error handling**: More robust error management for edge cases
 
 #### **Unit Tests**
 - ✅ Test framework setup: **CONFIGURED** (Jest + ts-jest)
@@ -98,7 +111,16 @@ A web-based calculator application specifically designed for high school student
 - Variable validation and error handling
 - Persistent variable storage during session
 
-## 🚀 **USAGE**
+## 🚀 **QUICK START**
+
+### **Clone and Run**
+```bash
+git clone https://github.com/ambivalence/radical-calculator.git
+cd radical-calculator
+npm install
+npm run dev
+# Open http://localhost:5173
+```
 
 ### **Development**
 ```bash
@@ -175,10 +197,12 @@ CalculationEngine
 4. **Export features** - Save calculations as PDF/image
 5. **Keyboard shortcuts** - Enhanced accessibility
 
-### **Deployment**
-1. **CI/CD Pipeline** - Automated testing and deployment
-2. **Hosting** - Deploy to Netlify/Vercel
-3. **Performance monitoring** - Analytics and error tracking
+### **Deployment Options**
+1. **GitHub Pages** - Static hosting directly from this repository
+2. **Netlify/Vercel** - One-click deployment with continuous integration
+3. **Self-hosted** - Deploy the `dist` folder to any web server
+
+The application is client-side only and requires no backend infrastructure.
 
 ## 🔍 **TECHNICAL DETAILS**
 
@@ -210,7 +234,7 @@ CalculationEngine
 - **Week 7**: 🔄 **CURRENT** - Testing and bug fixes
 - **Week 8**: 📋 **PLANNED** - Polish and deployment
 
-**Status**: **85% Complete** - Core functionality implemented, testing in progress
+**Status**: **95% Complete** - Core functionality implemented, bug fixes applied, and deployed to GitHub
 
 ---
 

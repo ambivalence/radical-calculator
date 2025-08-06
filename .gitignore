@@ -9,7 +9,7 @@ coverage/
 
 # Production
 build/
-dist/
+# dist/ - commented out for GitHub Pages deployment
 
 # Misc
 .DS_Store

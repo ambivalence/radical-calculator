@@ -2,11 +2,24 @@
 
 A web-based calculator application specifically designed for high school students with advanced radical handling capabilities.
 
-## 🌐 Live Repository
+## 🌐 Live Repository & Demo
 
 **GitHub Repository**: https://github.com/ambivalence/radical-calculator
 
-This project is publicly available and ready for deployment or contribution!
+**Live Demo**: Enable GitHub Pages to access the live application!
+
+### 🚀 Enable Live Demo (GitHub Pages)
+To make the calculator accessible via a live URL:
+
+1. Go to your repository: https://github.com/ambivalence/radical-calculator
+2. Click **Settings** tab
+3. Scroll down to **Pages** section
+4. Under **Source**, select **Deploy from a branch**
+5. Select **main** branch and **/dist** folder
+6. Click **Save**
+7. Your app will be live at: `https://ambivalence.github.io/radical-calculator/`
+
+The `dist` folder contains the built application ready for deployment!
 
 ## 🎯 Project Status
 

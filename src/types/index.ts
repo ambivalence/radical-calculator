@@ -80,6 +80,22 @@ export interface EvaluationResult {
   error?: string;
 }
 
+// Enhanced types for fraction support
+export interface FractionPart {
+  type: 'number' | 'fraction' | 'radical' | 'operator' | 'function' | 'variable';
+  value: string;
+  numerator?: string;
+  denominator?: string;
+  position: number;
+}
+
+export interface ExpressionSegment {
+  parts: FractionPart[];
+  cursorPosition: number;
+  activeFractionIndex?: number;
+  fractionCursorPosition?: 'numerator' | 'denominator';
+}
+
 export type DisplayMode = 'decimal' | 'radical';
 
 export interface AppState {

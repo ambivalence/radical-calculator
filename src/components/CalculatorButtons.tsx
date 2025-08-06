@@ -12,12 +12,13 @@ const buttonLayout = [
   ['0', '.', '=', '+'],
   ['sqrt(', 'abs(', '^', 'π'],
   ['sin(', 'cos(', 'tan(', 'e'],
-  ['log(', 'ln(', 'ans', 'x']
+  ['log(', 'ln(', 'ans', 'a/b']
 ]
 
 const operatorButtons = new Set(['+', '-', '*', '/', '^'])
 const functionButtons = new Set(['sqrt(', 'abs(', 'sin(', 'cos(', 'tan(', 'log(', 'ln('])
 const constantButtons = new Set(['π', 'e', 'ans'])
+const specialButtons = new Set(['a/b'])
 
 export const CalculatorButtons: React.FC<CalculatorButtonsProps> = ({ onButtonClick }) => {
   const getButtonClass = (button: string): string => {
@@ -27,6 +28,7 @@ export const CalculatorButtons: React.FC<CalculatorButtonsProps> = ({ onButtonCl
     if (operatorButtons.has(button)) return 'bg-blue-100 hover:bg-blue-200'
     if (functionButtons.has(button)) return 'bg-purple-100 hover:bg-purple-200'
     if (constantButtons.has(button)) return 'bg-green-100 hover:bg-green-200'
+    if (specialButtons.has(button)) return 'bg-yellow-100 hover:bg-yellow-200'
     return 'btn-secondary'
   }
 

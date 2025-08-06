@@ -1,8 +1,8 @@
 import { chromium } from 'playwright';
 import { spawn } from 'child_process';
 
-async function testCalculatorImprovements() {
-  console.log('🧪 Testing Calculator UI Improvements');
+async function testFractionBugs() {
+  console.log('🐛 Testing Fraction Bug Fixes');
   
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
@@ -28,107 +28,90 @@ async function testCalculatorImprovements() {
     await page.waitForSelector('input[type="text"]', { timeout: 10000 });
     console.log('✅ Calculator loaded successfully');
 
-    // Test 1: Check if "ans" button exists
-    console.log('\n🔍 Test 1: Checking for "ans" button...');
-    const ansButton = await page.locator('button:has-text("ans")').first();
-    const hasAnsButton = await ansButton.count() > 0;
-    console.log(`📊 "ans" button found: ${hasAnsButton ? '✅ YES' : '❌ NO'}`);
-
-    // Test 2: Input clearing after equals
-    console.log('\n🔍 Test 2: Testing input clearing after equals...');
+    // Test the problematic expressions
+    console.log('\n🧪 Testing problematic expressions...');
     
-    // Enter a calculation
-    await page.fill('input[type="text"]', 'sqrt(3) + sqrt(2)');
-    console.log('📝 Entered: sqrt(3) + sqrt(2)');
-    
-    // Press equals
-    await page.press('input[type="text"]', 'Enter');
-    await page.waitForTimeout(1000);
-    
-    // Check if input is cleared
-    const inputValue = await page.inputValue('input[type="text"]');
-    console.log(`📊 Input after equals: "${inputValue}" ${inputValue === '' ? '✅ CLEARED' : '❌ NOT CLEARED'}`);
-
-    // Test 3: "ans" button functionality
-    console.log('\n🔍 Test 3: Testing "ans" button click...');
-    if (hasAnsButton) {
-      await ansButton.click();
-      await page.waitForTimeout(500);
-      
-      const inputAfterAns = await page.inputValue('input[type="text"]');
-      console.log(`📊 Input after "ans" button: "${inputAfterAns}" ${inputAfterAns === 'ans' ? '✅ CORRECT' : '❌ INCORRECT'}`);
-      
-      // Clear input for next test
-      await page.fill('input[type="text"]', '');
-    }
-
-    // Test 4: Auto-prefix with operator buttons
-    console.log('\n🔍 Test 4: Testing auto-prefix with operator buttons...');
-    
-    const operatorTests = [
-      { button: '+', expected: 'ans+' },
-      { button: '*', expected: 'ans*' },
-      { button: '/', expected: 'ans/' },
-      { button: '^', expected: 'ans^' }
+    const problemExpressions = [
+      { input: '8/(3+6)', expected: '0.888...', description: 'Division with parentheses' },
+      { input: '3/4', expected: '0.75', description: 'Simple fraction' },
+      { input: '1/2 + 1/4', expected: '0.75', description: 'Fraction addition' },
+      { input: '(1/2)', expected: '0.5', description: 'Parenthesized fraction' },
+      { input: 'sqrt(8)/2', expected: '1.414...', description: 'Radical division' },
+      { input: '8/2', expected: '4', description: 'Simple division' },
+      { input: '3+6', expected: '9', description: 'Simple addition (control)' }
     ];
     
-    for (const test of operatorTests) {
-      // Clear input
+    for (const test of problemExpressions) {
+      console.log(`\n📝 Testing: ${test.input} (${test.description})`);
+      
       await page.fill('input[type="text"]', '');
+      await page.fill('input[type="text"]', test.input);
+      await page.press('input[type="text"]', 'Enter');
+      await page.waitForTimeout(1000);
       
-      // Click operator button
-      const operatorButton = await page.locator(`button:has-text("${test.button}")`).first();
-      await operatorButton.click();
-      await page.waitForTimeout(500);
+      // Check for error message
+      const errorElement = await page.locator('.text-red-600').first();
+      const hasError = await errorElement.count() > 0;
       
-      const result = await page.inputValue('input[type="text"]');
-      console.log(`📊 "${test.button}" button: "${result}" ${result === test.expected ? '✅ CORRECT' : '❌ INCORRECT'}`);
+      if (hasError) {
+        const errorText = await errorElement.textContent();
+        console.log(`❌ ERROR: "${errorText}"`);
+      } else {
+        const result = await page.locator('[class*="text-3xl"]').first().textContent();
+        console.log(`✅ Result: "${result}"`);
+        
+        // Check if there's a toggle for radical mode
+        const toggleButton = await page.locator('button[title*="Toggle"]').first();
+        const hasToggle = await toggleButton.count() > 0;
+        
+        if (hasToggle) {
+          await toggleButton.click();
+          await page.waitForTimeout(500);
+          const radicalResult = await page.locator('[class*="text-3xl"]').first().textContent();
+          console.log(`📊 Radical form: "${radicalResult}"`);
+          
+          // Toggle back
+          await toggleButton.click();
+          await page.waitForTimeout(500);
+        }
+      }
     }
 
-    // Test 5: Typing operators into empty input
-    console.log('\n🔍 Test 5: Testing typing operators into empty input...');
+    // Test fraction mode toggle
+    console.log('\n🔍 Testing fraction mode toggle...');
+    const fractionToggle = await page.locator('button[title*="fraction"]').first();
+    const hasToggle = await fractionToggle.count() > 0;
     
-    // Clear input
-    await page.fill('input[type="text"]', '');
-    
-    // Type a plus sign
-    await page.type('input[type="text"]', '+');
-    await page.waitForTimeout(500);
-    
-    const typedResult = await page.inputValue('input[type="text"]');
-    console.log(`📊 Typed "+": "${typedResult}" ${typedResult === 'ans+' ? '✅ AUTO-PREFIXED' : '❌ NOT PREFIXED'}`);
+    if (hasToggle) {
+      await fractionToggle.click();
+      await page.waitForTimeout(500);
+      
+      const modeText = await page.locator('text*="Coming Soon"').count();
+      console.log(`📊 Fraction mode shows "Coming Soon": ${modeText > 0 ? '✅ YES' : '❌ NO'}`);
+      
+      // Toggle back
+      await fractionToggle.click();
+      await page.waitForTimeout(500);
+    }
 
-    // Test 6: Full workflow test
-    console.log('\n🔍 Test 6: Testing full workflow...');
+    // Test "a/b" button
+    console.log('\n🔍 Testing "a/b" button...');
+    const abButton = await page.locator('button:has-text("a/b")').first();
+    const hasAbButton = await abButton.count() > 0;
     
-    // Clear and start fresh
-    await page.fill('input[type="text"]', '');
-    await page.fill('input[type="text"]', '5');
-    await page.press('input[type="text"]', 'Enter');
-    await page.waitForTimeout(1000);
-    
-    console.log('📝 Step 1: Calculated 5');
-    
-    // Click + button (should auto-prefix with ans)
-    const plusButton = await page.locator('button:has-text("+")').first();
-    await plusButton.click();
-    await page.waitForTimeout(500);
-    
-    const afterPlus = await page.inputValue('input[type="text"]');
-    console.log(`📊 After + button: "${afterPlus}"`);
-    
-    // Add 3
-    await page.type('input[type="text"]', '3');
-    await page.press('input[type="text"]', 'Enter');
-    await page.waitForTimeout(1000);
-    
-    const finalResult = await page.locator('[class*="text-3xl"]').first().textContent();
-    console.log(`📊 Final result: "${finalResult}" ${finalResult === '8' ? '✅ CORRECT (5+3=8)' : '❌ INCORRECT'}`);
+    if (hasAbButton) {
+      await page.fill('input[type="text"]', '');
+      await abButton.click();
+      await page.waitForTimeout(500);
+      
+      const inputValue = await page.inputValue('input[type="text"]');
+      console.log(`📊 "a/b" button result: "${inputValue}"`);
+    }
 
     // Clean up
     devServer.kill('SIGTERM');
     
-    console.log('\n✅ All tests completed!');
+    console.log('\n✅ All bug tests completed!');
     
   } catch (error) {
     console.error('❌ Test failed:', error);
@@ -138,4 +121,4 @@ async function testCalculatorImprovements() {
 }
 
 // Run the test
-testCalculatorImprovements().catch(console.error);
+testFractionBugs().catch(console.error);
